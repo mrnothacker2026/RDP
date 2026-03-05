@@ -1,0 +1,40 @@
+name: Windows RDP (Browser Login)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Enable RDP & Firewall Rules
+        run: |
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -name "fDenyTSConnections" -Value 0
+          Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -name "UserAuthentication" -Value 1
+
+      - name: Create RDP User
+        run: |
+          $Password = Add-Type -AssemblyName System.Web; [System.Web.Security.Membership]::GeneratePassword(16,2)
+          net user RDP $Password /add
+          net localgroup administrators RDP /add
+          echo "======================================"
+          echo "Username: RDP"
+          echo "Password: $Password"
+          echo "======================================"
+
+      - name: Install Tailscale
+        run: |
+          Invoke-WebRequest -Uri "https://pkgs.tailscale.com/stable/tailscale-setup-latest.msi" -OutFile "tailscale.msi"
+          Start-Process -FilePath "msiexec.exe" -ArgumentList "/i tailscale.msi /qn" -Wait
+
+      - name: Start Tailscale & Wait for Login
+        run: |
+          # We start Tailscale without an auth key. It will print a URL and wait for you.
+          & "C:\Program Files\Tailscale\tailscale.exe" up --hostname=github-rdp-manual
+
+      - name: Keep Session Alive
+        run: |
+          echo "RDP Session is active."
+          while ($true) { Start-Sleep -Seconds 300 }
