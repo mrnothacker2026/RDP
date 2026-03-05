@@ -16,14 +16,10 @@ jobs:
 
       - name: Create RDP User
         run: |
-          # Creates a guaranteed complex password that works in the new PowerShell
-          $Password = "RdpU5er!" + [guid]::NewGuid().ToString("N").Substring(0, 10)
+          # Hardcoded to bypass generation errors but still pass Windows complexity rules
+          $Password = "RootUser123!"
           net user RDP $Password /add
           net localgroup administrators RDP /add
-          echo "======================================"
-          echo "Username: RDP"
-          echo "Password: $Password"
-          echo "======================================"
 
       - name: Install Tailscale
         run: |
@@ -32,7 +28,6 @@ jobs:
 
       - name: Start Tailscale & Wait for Login
         run: |
-          # We start Tailscale without an auth key. It will print a URL and wait for you.
           & "C:\Program Files\Tailscale\tailscale.exe" up --hostname=github-rdp-manual
 
       - name: Keep Session Alive
