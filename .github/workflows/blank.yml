@@ -16,7 +16,8 @@ jobs:
 
       - name: Create RDP User
         run: |
-          $Password = Add-Type -AssemblyName System.Web; [System.Web.Security.Membership]::GeneratePassword(16,2)
+          # Creates a guaranteed complex password that works in the new PowerShell
+          $Password = "RdpU5er!" + [guid]::NewGuid().ToString("N").Substring(0, 10)
           net user RDP $Password /add
           net localgroup administrators RDP /add
           echo "======================================"
